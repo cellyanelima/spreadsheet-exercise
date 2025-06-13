@@ -1,8 +1,7 @@
 /**
  * This function create one table by adding rows and colunms with all input elements
  */
-
-function createTable(numRows, numCells) {
+function createTable(numRows, numColumns) {
   let table = document.createElement('table')
 
   // Loop over all rows (lines)
@@ -10,35 +9,38 @@ function createTable(numRows, numCells) {
     let row = document.createElement('tr')
     //console.log('hi tr')
 
-    for (let j = 0; j <= numCells; j++) {
-      let cell
-
-      if (i === 0 && j === 0) {
-        cell = document.createElement('th')
-        cell.innerText = ' '
-      } else if (i === 0) {
-        cell = document.createElement('th')
-        cell.innerText = getLettersHeader(j - 1)
-      } else if (j === 0) {
-        cell = document.createElement('th')
-        cell.innerText = i
-      } else {
-        cell = document.createElement('td')
-        //console.log('hi td')
-        cell.innerText = ' here '
+    // Checking if it is the first line (header)
+    if (i === 0) {
+      // Create all colunmn labels
+      for (let j = 0; j <= numColumns; j++) {
+        let cell = document.createElement('th')
+        // First cell must be empty
+        if (j !== 0) cell.innerText = getLettersHeader(j - 1)
+        row.appendChild(cell)
       }
+    } else {
+      for (let j = 0; j <= numColumns; j++) {
+        let cell = document.createElement('td')
+        cell.contentEditable = true
 
-      row.appendChild(cell)
+        if (j === 0) {
+          cell.innerText = i
+        } else {
+          cell.innerText = i === 3 && j === 2 ? '12' : ''
+        }
+        row.appendChild(cell)
+      }
     }
-
     table.appendChild(row)
   }
-
-  document.getElementById('table').appendChild(table)
+  return table
 }
 
-function getLettersHeader(pos) {
-  let alf = [
+/**
+ * This function reads the position as parameter and calculate the header letters
+ */
+function getLettersHeader(position) {
+  let alphabet = [
     'A',
     'B',
     'C',
@@ -67,9 +69,19 @@ function getLettersHeader(pos) {
     'Z',
   ]
 
-  if (pos < alf.length - 1) {
-    return alf[pos]
+  let letters = ''
+  while (position >= 0) {
+    letters = alphabet[position % alphabet.length] + letters
+    position = Math.floor(position / alphabet.length) - 1
   }
+  return letters
 }
 
-createTable(100, 100)
+function drawGrid() {
+  let table = createTable(30, 30)
+  document.getElementById('gridPlaceHolder').innerHTML = ''
+  document.getElementById('gridPlaceHolder').appendChild(table)
+}
+
+// Create the initial grid
+drawGrid()
