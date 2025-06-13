@@ -1,0 +1,13 @@
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+table {
+  border-collapse: collapse;
+}
+th,
+td {
+  border: 1px solid black;
+}
+th {
+  width: 50px;
+}
