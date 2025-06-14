@@ -1,11 +1,10 @@
+let spreadsheetData = {
+  cells: {},
+}
+
 /**
  * This function create one table by adding rows and colunms with all input elements
  */
-
-let spreadsheetData = {
-  cells: {}, // preciso que venha com letra e numero -> C1
-}
-
 function createTable(numRows, numColumns) {
   let table = document.createElement('table')
 
@@ -111,9 +110,16 @@ function getLettersHeader(position) {
 }
 
 function drawGrid() {
+  let grid = document.getElementById('gridPlaceHolder')
   let table = createTable(30, 30)
-  document.getElementById('gridPlaceHolder').innerHTML = ''
-  document.getElementById('gridPlaceHolder').appendChild(table)
+  grid.innerHTML = ''
+  grid.appendChild(table)
+}
+
+document.getElementById('refresh').onclick = (e) => {
+  let grid = document.getElementById('gridPlaceHolder')
+  grid.innerHTML = 'Loading table...'
+  setTimeout(() => drawGrid(), 500)
 }
 
 // Create the initial grid
