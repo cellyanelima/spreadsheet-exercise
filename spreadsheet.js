@@ -1,6 +1,11 @@
 /**
  * This function create one table by adding rows and colunms with all input elements
  */
+
+let spreadsheetData = {
+  cells: {}, // preciso que venha com letra e numero -> C1
+}
+
 function createTable(numRows, numColumns) {
   let table = document.createElement('table')
 
@@ -21,12 +26,23 @@ function createTable(numRows, numColumns) {
     } else {
       for (let j = 0; j <= numColumns; j++) {
         let cell = document.createElement('td')
-        cell.contentEditable = true
 
         if (j === 0) {
           cell.innerText = i
         } else {
-          cell.innerText = i === 3 && j === 2 ? '12' : ''
+          const colLetter = getLettersHeader(j - 1)
+          const cellKey = `${colLetter}${i}`
+          cell.innerText = spreadsheetData.cells[cellKey] || ''
+          cell.ondblclick = startEditMode
+          cell.onkeydown = (e) => {
+            if (e.key == 'Enter') {
+              e.target.contentEditable = false
+
+              //cell.onpointerleave = exitEditMode
+              spreadsheetData.cells[cellKey] = cell.innerText.trim()
+              console.log(spreadsheetData)
+            }
+          }
         }
         row.appendChild(cell)
       }
@@ -34,6 +50,23 @@ function createTable(numRows, numColumns) {
     table.appendChild(row)
   }
   return table
+}
+/*
+function checkNavigation(e) {
+  if (e.key == 'Enter') {
+    e.target.contentEditable = false
+    //console.log(e.key)
+    return false
+  }
+}
+*/
+function startEditMode(e) {
+  e.target.contentEditable = true
+  e.target.focus()
+}
+
+function exitEditMode(e) {
+  e.target.contentEditable = false
 }
 
 /**
