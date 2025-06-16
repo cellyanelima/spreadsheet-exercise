@@ -1,4 +1,5 @@
 let spreadsheetData = {}
+let columnIndex = {}
 
 /**
  * 2. When loading index.html into Chrome or Firefox, it should draw a 100x100 grid of cells,
@@ -17,7 +18,12 @@ function createTable(numRows, numColumns) {
       for (let j = 0; j <= numColumns; j++) {
         let cell = document.createElement('th')
         // First cell must be empty
-        if (j !== 0) cell.innerText = getLettersHeader(j - 1)
+        if (j !== 0) {
+          const columnLetter = getLettersHeader(j - 1)
+          cell.innerText = columnLetter
+          //here I created the column index (number) object
+          columnIndex[columnLetter] = j
+        }
         row.appendChild(cell)
       }
     } else {
@@ -100,6 +106,7 @@ function getLettersHeader(position) {
     letters = alphabet[position % alphabet.length] + letters
     position = Math.floor(position / alphabet.length) - 1
   }
+
   return letters
 }
 
@@ -142,7 +149,7 @@ function exitEditMode(cell) {
   let newValue = cell.innerText.trim()
   if (newValue.startsWith('=')) {
     cellData.formula = newValue.toUpperCase()
-    cellData.value = calculate(cellData)
+    cellData.value = calculate(cellData.formula)
 
     // Update the cell with the calculated value
     cell.innerText = cellData.value
@@ -166,7 +173,7 @@ into cells where you've saved it.
 document.getElementById('refresh').onclick = (e) => {
   let grid = document.getElementById('grid')
   grid.innerHTML = 'Loading table...'
-  setTimeout(() => drawGrid(), 500)
+  setTimeout(() => drawGrid(), 100)
 }
 
 /*
@@ -175,8 +182,13 @@ should calculate the sum of these two cells and display the result in A3. Updati
 update A3.
 */
 
-function calculate(cellData) {
-  let formula = cellData.formula.slice(1) // Remove "="
+function calculate(formula) {
+  formula = formula.slice(1) // Remove "="
+
+  if (formula.startsWith('SUM')) {
+    formula = rangeCells(formula)
+    // console.log(formula)
+  }
 
   // Replaces references like A1, B2, etc
   formula = formula.replace(/([A-Z]+[0-9]+)/g, (idElement) => {
@@ -200,7 +212,7 @@ function updateFormulaCells(currentId) {
 
       // Checking if it is a formula
       if (cellData.formula.startsWith('=')) {
-        cellData.value = calculate(cellData)
+        cellData.value = calculate(cellData.formula)
 
         // Refreshing values on screen
         const cell = document
@@ -213,5 +225,41 @@ function updateFormulaCells(currentId) {
   }
 }
 
-// Create the initial grid
+function rangeCells(formula) {
+  //console.log(formula)
+  let resultMatch = formula.match(/\(([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)\)/)
+  //resultMatch = ["(A1:C3)", "A", "1", "C", "3"]
+  //resultMatch.slice(1, 5) → ["A", "1", "C", "3"]
+
+  if (resultMatch) {
+    let [col1, row1, col2, row2] = resultMatch.slice(1, 5)
+    console.log(col1)
+
+    row1 = parseInt(row1)
+    row2 = parseInt(row2)
+
+    const startRow = Math.min(row1, row2)
+    const endRow = Math.max(row1, row2)
+
+    const colIndex1 = columnIndex[col1] - 1 // columnIndex["A"] = 1
+    const colIndex2 = columnIndex[col2] - 1
+
+    if (colIndex1 === undefined || colIndex2 === undefined) return '#ERROR_COL'
+
+    const startCol = Math.min(colIndex1, colIndex2)
+    const endCol = Math.max(colIndex1, colIndex2)
+
+    let expandedCells = []
+
+    for (let col = startCol; col <= endCol; col++) {
+      const colLetter = getLettersHeader(col)
+      for (let row = startRow; row <= endRow; row++) {
+        expandedCells.push(`${colLetter}${row}`)
+      }
+    }
+
+    return expandedCells.join('+')
+  }
+}
+
 drawGrid()
