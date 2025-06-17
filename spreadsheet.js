@@ -1,40 +1,47 @@
 let spreadsheetData = {}
+let columnIndex = {}
+let numOfRowsTable = 100
+let numOfColumnsTable = 100
 
 /**
  * 2. When loading index.html into Chrome or Firefox, it should draw a 100x100 grid of cells,
-with columns labelled A-Z, AA, AB, AC, etc. and rows numbered 1 to 100.
+ *    with columns labelled A-Z, AA, AB, AC, etc. and rows numbered 1 to 100.
  */
 function createTable(numRows, numColumns) {
   let table = document.createElement('table')
 
   // Loop over all rows (lines)
-  for (let i = 0; i <= numRows; i++) {
+  for (let r = 0; r <= numRows; r++) {
     let row = document.createElement('tr')
 
     // Checking if it is the first line (header)
-    if (i === 0) {
+    if (r === 0) {
       // Create all colunmn labels
-      for (let j = 0; j <= numColumns; j++) {
+      for (let c = 0; c <= numColumns; c++) {
         let cell = document.createElement('th')
         // First cell must be empty
-        if (j !== 0) cell.innerText = getLettersHeader(j - 1)
+        if (c !== 0) {
+          const columnLetter = getLettersHeader(c - 1)
+          cell.innerText = columnLetter
+          // Map the column letter to index (number) object
+          columnIndex[columnLetter] = c
+        }
         row.appendChild(cell)
       }
     } else {
-      for (let j = 0; j <= numColumns; j++) {
+      for (let c = 0; c <= numColumns; c++) {
         let cell = document.createElement('td')
 
-        if (j === 0) {
-          cell.innerText = i
+        if (c === 0) {
+          cell.innerText = r
         } else {
           // Assign a ID to each cell as 'column+row', like A1, B2...
-          const columnLetter = getLettersHeader(j - 1)
-          const id = `${columnLetter}${i}`
+          const columnLetter = getLettersHeader(c - 1)
+          const id = `${columnLetter}${r}`
           cell.dataset.id = id // Attribute: data-id
 
           // Reloading the previous data before refresh button
           cell.innerText = spreadsheetData[id]?.value || ''
-          //cell.contentEditable = true
 
           // Events
           // Start editing mode
@@ -100,12 +107,13 @@ function getLettersHeader(position) {
     letters = alphabet[position % alphabet.length] + letters
     position = Math.floor(position / alphabet.length) - 1
   }
+
   return letters
 }
 
 function drawGrid() {
   let grid = document.getElementById('grid')
-  let table = createTable(30, 30)
+  let table = createTable(numOfRowsTable, numOfColumnsTable)
   // Cleanup the previous table if exists
   grid.innerHTML = ''
   grid.appendChild(table)
@@ -113,14 +121,13 @@ function drawGrid() {
 
 /**
  * 3. When you click in a cell and enter a number, it should store the number in a JavaScript
-object (note: this would be lost when you refresh the page).
+ *    object (note: this would be lost when you refresh the page).
  */
-
 function startEditMode(cell) {
   const id = cell.dataset.id
 
   // Replace the value of this TD to the formula if exists
-  // A formula contained in the cell reappears
+  // The formula contained in the cell reappears
   const cellData = spreadsheetData[id]
   if (cellData?.formula.length > 0) {
     cell.innerText = cellData.formula
@@ -142,7 +149,7 @@ function exitEditMode(cell) {
   let newValue = cell.innerText.trim()
   if (newValue.startsWith('=')) {
     cellData.formula = newValue.toUpperCase()
-    cellData.value = calculate(cellData)
+    cellData.value = calculate(cellData.formula)
 
     // Update the cell with the calculated value
     cell.innerText = cellData.value
@@ -159,32 +166,33 @@ function exitEditMode(cell) {
 }
 
 /**
-* 4. Have a refresh button that redraws the grid (without refreshing the page) and inserts data
-into cells where you've saved it.
-*/
-
+ * 4. Have a refresh button that redraws the grid (without refreshing the page) and inserts data
+ *    into cells where you've saved it.
+ */
 document.getElementById('refresh').onclick = (e) => {
   let grid = document.getElementById('grid')
   grid.innerHTML = 'Loading table...'
-  setTimeout(() => drawGrid(), 500)
+  setTimeout(() => drawGrid(), 100)
 }
 
 /*
-* 5. Add support for some basic formulas. For example if you enter "=A1+A2" into A3 it
-should calculate the sum of these two cells and display the result in A3. Updating A1 would
-update A3.
-*/
+ * 5. Add support for some basic formulas. For example if you enter "=A1+A2" into A3 it
+ *    should calculate the sum of these two cells and display the result in A3. Updating A1 would
+ *    update A3.
+ */
+function calculate(formula) {
+  formula = formula.slice(1) // Remove "="
 
-function calculate(cellData) {
-  let formula = cellData.formula.slice(1) // Remove "="
-
-  // Replaces references like A1, B2, etc
-  formula = formula.replace(/([A-Z]+[0-9]+)/g, (idElement) => {
-    const cellDataElement = spreadsheetData[idElement]
-    return cellDataElement?.value || 0
-  })
+  if (formula.startsWith('SUM')) {
+    formula = rangeCells(formula)
+  }
 
   try {
+    // Replaces references like A1, B2, etc
+    formula = formula.replace(/([A-Z]+[0-9]+)/g, (idElement) => {
+      const cellDataElement = spreadsheetData[idElement]
+      return cellDataElement?.value || 0
+    })
     return eval(formula)
   } catch (e) {
     return '#ERROR'
@@ -200,7 +208,7 @@ function updateFormulaCells(currentId) {
 
       // Checking if it is a formula
       if (cellData.formula.startsWith('=')) {
-        cellData.value = calculate(cellData)
+        cellData.value = calculate(cellData.formula)
 
         // Refreshing values on screen
         const cell = document
@@ -213,5 +221,36 @@ function updateFormulaCells(currentId) {
   }
 }
 
-// Create the initial grid
+function rangeCells(formula) {
+  let resultMatch = formula.match(/\(([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)\)/) // resultMatch = ["(A1:C3)", "A", "1", "C", "3"]
+
+  if (resultMatch) {
+    let [col1, row1, col2, row2] = resultMatch.slice(1, 5) // resultMatch.slice(1, 5) → ["A", "1", "C", "3"]
+
+    // Convert the row numbers from String
+    row1 = parseInt(row1)
+    row2 = parseInt(row2)
+
+    const startRow = Math.min(row1, row2)
+    const endRow = Math.max(row1, row2)
+
+    const colIndex1 = columnIndex[col1] // columnIndex["A"] = 1
+    const colIndex2 = columnIndex[col2]
+
+    if (colIndex1 === undefined || colIndex2 === undefined) return '#ERROR_COL'
+
+    const startCol = Math.min(colIndex1, colIndex2)
+    const endCol = Math.max(colIndex1, colIndex2)
+
+    let expandedCells = []
+    for (let c = startCol; c <= endCol; c++) {
+      const colLetter = getLettersHeader(c - 1)
+      for (let r = startRow; r <= endRow; r++) {
+        expandedCells.push(`${colLetter}${r}`)
+      }
+    }
+    return expandedCells.join('+')
+  }
+}
+
 drawGrid()
