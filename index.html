@@ -13,7 +13,12 @@ can be contained in the index.html page.
   </head>
   <body>
     <h1>Spreadsheet</h1>
-    <p><input type="button" id="refresh" value="Refresh" /></p>
+    <div id="toolbar" class="btn-action">
+      <button id="refresh" class="btn">Refresh</button>
+      <button id="bold" class="btn">B</button>
+      <button id="italic" class="btn">I</button>
+      <button id="underline" class="btn">U</button>
+    </div>
     <div id="grid"></div>
     <script src="spreadsheet.js"></script>
   </body>
