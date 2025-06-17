@@ -2,6 +2,7 @@ let spreadsheetData = {}
 let columnIndex = {}
 let numOfRowsTable = 100
 let numOfColumnsTable = 100
+let selectedCell = null
 
 /**
  * 2. When loading index.html into Chrome or Firefox, it should draw a 100x100 grid of cells,
@@ -59,6 +60,14 @@ function createTable(numRows, numColumns) {
           // Finish editing mode when press Enter
           cell.onkeydown = (e) => {
             if (e.key == 'Enter') cell.blur()
+          }
+
+          // Bold / Italic / Underline / Selected
+          cell.onclick = (e) => {
+            const cell = e.target
+            if (selectedCell) selectedCell.classList.remove('selected')
+            selectedCell = cell
+            selectedCell.classList.add('selected')
           }
         }
         row.appendChild(cell)
@@ -221,6 +230,11 @@ function updateFormulaCells(currentId) {
   }
 }
 
+/*
+ * 6. Add support for some basic functions. For example if you enter "=sum(A1:A10)" into
+ *    A11, then it should calculate the sum of all cells in the range and display the result in
+ *    A11. Updating any value in the range would recalculate A11.
+ */
 function rangeCells(formula) {
   let resultMatch = formula.match(/\(([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)\)/) // resultMatch = ["(A1:C3)", "A", "1", "C", "3"]
 
@@ -251,6 +265,21 @@ function rangeCells(formula) {
     }
     return expandedCells.join('+')
   }
+}
+
+/*
+ * 7. Add support for formatting, for example bold, italics and underline
+ */
+document.getElementById('bold').onclick = () => {
+  if (selectedCell) selectedCell.classList.toggle('bold')
+}
+
+document.getElementById('italic').onclick = () => {
+  if (selectedCell) selectedCell.classList.toggle('italic')
+}
+
+document.getElementById('underline').onclick = () => {
+  if (selectedCell) selectedCell.classList.toggle('underline')
 }
 
 drawGrid()
